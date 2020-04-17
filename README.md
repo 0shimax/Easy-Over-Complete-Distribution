@@ -1,1 +1,1 @@
-# Easy-Over-Complete-Distribution
+reference: https://arxiv.org/pdf/2004.00666.pdf

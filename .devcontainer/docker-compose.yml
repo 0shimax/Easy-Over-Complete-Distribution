@@ -1,0 +1,13 @@
+version: '3'
+services:
+  jupyterlab:
+    container_name: python3
+    command: sleep infinity
+    image: <mine>/pytorch:v0.1
+    shm_size: '8gb'
+    volumes:
+       - <project dir>:/project
+       - <data dir>:/data
+    ports:
+      - 8888:8888
+      - 5000:5000

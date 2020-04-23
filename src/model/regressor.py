@@ -14,10 +14,11 @@ def hinge_loss(d_near, d_far, margin=1.):
     
 
 class Regressor(nn.Module):
-    def __init__(self, x_dim=1000, n_class=5, h_dim=128):
+    def __init__(self, x_dim=1000, n_class=5, h_dim=128, device='cpu'):
         super().__init__()
         self.fc = nn.Linear(x_dim, h_dim)
         self.cl = nn.Linear(h_dim, n_class)
+        self.centers = torch.nn.Parameter(torch.eye(n_class).to(device), requires_grad=True)
 
     def predict(self, x):
         self.emb = F.relu(self.fc(x))
@@ -31,8 +32,25 @@ class Regressor(nn.Module):
         self.d2 = distance(anc_emb, neg_emb)
         return anc_cl, pos_cl, neg_cl
         
+    # def loss(self, y_anc, y_pos, y_neg, t_anc, t_pos, t_neg):
+    #     y = torch.cat([y_anc, y_pos, y_neg], 0)
+    #     c = torch.cat([t_anc, t_pos, t_neg], 0)
+    #     CL = F.cross_entropy(y, c.squeeze(1))
+    #     return hinge_loss(self.d1, self.d2).mean() + CL
+
+
+    # def loss(self, y_anc, y_pos, y_neg, c_anc, c_pos, c_neg):
+    #     y = torch.cat([y_anc, y_pos, y_neg], 0)
+    #     c = torch.cat([c_anc, c_pos, c_neg], 0)
+    #     CL = F.cross_entropy(y, c.squeeze(1))
+    #     return hinge_loss(self.d1, self.d2).mean() # + CL
+
+
     def loss(self, y_anc, y_pos, y_neg, t_anc, t_pos, t_neg):
         y = torch.cat([y_anc, y_pos, y_neg], 0)
         c = torch.cat([t_anc, t_pos, t_neg], 0)
-        CL = F.cross_entropy(y, c.squeeze(1))
+        CL = self._center_loss(y, self.centers[c].squeeze(1))
         return hinge_loss(self.d1, self.d2).mean() + CL
+
+    def _center_loss(self, predicts, targets):
+        return (0.5*(predicts - targets).pow(2).sum(dim=1)).mean()

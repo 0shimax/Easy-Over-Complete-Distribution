@@ -13,7 +13,6 @@ from feature.data_loader import WBCDataset, loader
 from feature.utils import one_hot
 from metric.utils import print_result
 from model.visualizer.lime_visualizer import visualize
-from model.cvae import CVAE
 from model.regressor import Regressor
 
 
@@ -22,7 +21,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device:", device)
 
 
-def test(args, mnasnet, cvae, regressor, data_loader, show_image_on_board=True):
+def test(args, mnasnet, regressor, data_loader, show_image_on_board=True):
     writer = SummaryWriter()
     weights = []
     images = []
@@ -36,11 +35,8 @@ def test(args, mnasnet, cvae, regressor, data_loader, show_image_on_board=True):
             labels.append(label)
 
             x = mnasnet(image)
-            out_cl, _ = regressor.predict(x)
-            cl = one_hot(out_cl.argmax(dim=1, keepdim=True), args.n_class)
-            recon_anchor = cvae(x, cl)
-            out, emb = regressor.predict(recon_anchor)
-            out_label = out.argmax(dim=1, keepdim=True)
+            out_cl, emb = regressor.predict(x)
+            out_label = out_cl.argmax(dim=1, keepdim=True)
             # visualize(args, image, predict, i, label, out_label)
             result_labels.append(out_label)
             weights.append(emb.squeeze(0).numpy())
@@ -57,12 +53,7 @@ def test(args, mnasnet, cvae, regressor, data_loader, show_image_on_board=True):
 
 def main(args):
     mnasnet = models.mnasnet1_0(pretrained=True).to(device).eval()
-    cvae = CVAE(1000, 128, args.n_class*2, args.n_class).to(device).eval()
     regressor = Regressor().to(device).eval()
-    if Path(args.cvae_resume_model).exists():
-        print("load cvae model:", args.cvae_resume_model)
-        cvae.load_state_dict(torch.load(args.cvae_resume_model))
-
     if Path(args.regressor_resume_model).exists():
         print("load regressor model:", args.regressor_resume_model)
         regressor.load_state_dict(torch.load(args.regressor_resume_model))
@@ -74,14 +65,13 @@ def main(args):
     image_label["class"] = image_label["class"] - 1
     dataset = WBCDataset(image_label.values, args.data_root, subset=args.subset)
     data_loader = loader(dataset, 1, False)
-    test(args, mnasnet, cvae, regressor, data_loader, show_image_on_board=args.show_image_on_board)
+    test(args, mnasnet, regressor, data_loader, show_image_on_board=args.show_image_on_board)
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--n-class', type=int, default=5, help='number of class')
-    parser.add_argument('--cvae-resume-model', default='./result/wbc/cvae_phase3.pth', help='path to trained model')
-    parser.add_argument('--regressor-resume-model', default='./result/wbc/regressor_phase3.pth', help='path to trained model')
+    parser.add_argument('--regressor-resume-model', default='./result/wbc/model_phase2.pth', help='path to trained model')
     parser.add_argument('--data-root', default="./data/segmentation_WBC-master")
     parser.add_argument('--metadata-file-name', default="Class_Labels_of_{}.csv")
     parser.add_argument('--subset', default="Dataset1")

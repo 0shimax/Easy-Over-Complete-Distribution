@@ -46,7 +46,7 @@ def train(args, mnasnet1_0, model, optimizer, data_loader):
 
 def main(args):
     mnasnet1_0 = models.mnasnet1_0(pretrained=True).to(device).eval()
-    model = CVAE(1000, 128, args.n_class*2, args.n_class).to(device)
+    model = CVAE(1000, 128, args.n_class*3, args.n_class).to(device)
 
     image_label = pandas.read_csv(
         Path(args.data_root, 
@@ -66,7 +66,7 @@ if __name__=="__main__":
     parser.add_argument('--data-root', default="./data/segmentation_WBC-master")
     parser.add_argument('--metadata-file-name', default="Class_Labels_of_{}.csv")
     parser.add_argument('--subset', default="Dataset1")
-    parser.add_argument('--epoch', default=50, help='number of epoch')
+    parser.add_argument('--epoch', default=100, help='number of epoch')
     parser.add_argument('--batch-size', default=16, help='number of batch')
     parser.add_argument('--out-dir', default='./result/wbc', help='folder to output data and model checkpoints')
     args = parser.parse_args()

@@ -37,9 +37,9 @@ def train(args, mnasnet, cvae_model, model, optimizer, data_loader):
                 negative = mnasnet(negative)
 
             if random.random()>0.9:
-                anchor = cvae_model(anchor, one_hot(label, args.n_class))
-                positive = cvae_model(positive, one_hot(label, args.n_class))
-                negative = cvae_model(negative, one_hot(neg_label, args.n_class))
+                anchor = cvae_model(anchor)
+                positive = cvae_model(positive)
+                negative = cvae_model(negative)
 
             optimizer.zero_grad()
             
@@ -58,12 +58,12 @@ def train(args, mnasnet, cvae_model, model, optimizer, data_loader):
                     100. * batch_idx / len(data_loader), loss.item() / args.batch_size))
     print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(data_loader.dataset)))
     torch.save(model.state_dict(),
-               '{}/model_phase2.pth'.format(args.out_dir))
+               '{}/model_phase2_vanira.pth'.format(args.out_dir))
 
 
 def main(args):
     mnasnet = models.mnasnet1_0(pretrained=True).to(device).eval()
-    cvae_model = CVAE(1000, 128, args.n_class*3, args.n_class).to(device).eval()
+    cvae_model = CVAE(1000, 128, 128, args.n_class, 128).to(device).eval()
     if Path(args.resume_model).exists():
         print("load model:", args.resume_model)
         cvae_model.load_state_dict(torch.load(args.resume_model))
@@ -89,7 +89,7 @@ if __name__=="__main__":
     parser.add_argument('--data-root', default="./data/segmentation_WBC-master")
     parser.add_argument('--metadata-file-name', default="Class_Labels_of_{}.csv")
     parser.add_argument('--subset', default="Dataset1")
-    parser.add_argument('--resume-model', default='./result/wbc/model_phase1.pth', help='path to trained model')
+    parser.add_argument('--resume-model', default='./result/wbc/model_phase1_emb.pth', help='path to trained model')
     parser.add_argument('--epoch', default=50, help='number of epoch')
     parser.add_argument('--batch-size', default=16, help='number of batch')
     parser.add_argument('--out-dir', default='./result/wbc', help='folder to output data and model checkpoints')

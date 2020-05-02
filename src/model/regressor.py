@@ -32,20 +32,6 @@ class Regressor(nn.Module):
         self.d2 = distance(anc_emb, neg_emb)
         return anc_cl, pos_cl, neg_cl
         
-    # def loss(self, y_anc, y_pos, y_neg, t_anc, t_pos, t_neg):
-    #     y = torch.cat([y_anc, y_pos, y_neg], 0)
-    #     c = torch.cat([t_anc, t_pos, t_neg], 0)
-    #     CL = F.cross_entropy(y, c.squeeze(1))
-    #     return hinge_loss(self.d1, self.d2).mean() + CL
-
-
-    # def loss(self, y_anc, y_pos, y_neg, c_anc, c_pos, c_neg):
-    #     y = torch.cat([y_anc, y_pos, y_neg], 0)
-    #     c = torch.cat([c_anc, c_pos, c_neg], 0)
-    #     CL = F.cross_entropy(y, c.squeeze(1))
-    #     return hinge_loss(self.d1, self.d2).mean() # + CL
-
-
     def loss(self, y_anc, y_pos, y_neg, t_anc, t_pos, t_neg):
         y = torch.cat([y_anc, y_pos, y_neg], 0)
         c = torch.cat([t_anc, t_pos, t_neg], 0)

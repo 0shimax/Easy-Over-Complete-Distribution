@@ -22,13 +22,13 @@ def train(args, mnasnet1_0, model, optimizer, data_loader):
     train_loss = 0
     for epoch in range(args.epoch):
         for batch_idx, (data, cond) in enumerate(data_loader):
-            data, cond = data.to(device), one_hot(cond, args.n_class).to(device)
+            data, cond = data.to(device), cond.to(device)
             optimizer.zero_grad()
             
             with torch.no_grad():
                 x = mnasnet1_0(data)
-            recon_batch = model(x, cond)
-            loss = model.loss(recon_batch, x.detach())
+            recon_batch = model(x)
+            loss = model.loss(recon_batch, x.detach(), cond)
             
             loss.backward()
             train_loss += loss.item()
@@ -42,11 +42,11 @@ def train(args, mnasnet1_0, model, optimizer, data_loader):
                     100. * batch_idx / len(data_loader), loss.item() / len(data)))
     print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(data_loader.dataset)))
     torch.save(model.state_dict(),
-               '{}/model_phase1.pth'.format(args.out_dir))
+               '{}/model_phase1_emb.pth'.format(args.out_dir))
 
 def main(args):
     mnasnet1_0 = models.mnasnet1_0(pretrained=True).to(device).eval()
-    model = CVAE(1000, 128, args.n_class*3, args.n_class).to(device)
+    model = CVAE(1000, 128, 128, args.n_class, 128).to(device)
 
     image_label = pandas.read_csv(
         Path(args.data_root, 
@@ -66,7 +66,7 @@ if __name__=="__main__":
     parser.add_argument('--data-root', default="./data/segmentation_WBC-master")
     parser.add_argument('--metadata-file-name', default="Class_Labels_of_{}.csv")
     parser.add_argument('--subset', default="Dataset1")
-    parser.add_argument('--epoch', default=100, help='number of epoch')
+    parser.add_argument('--epoch', default=50, help='number of epoch')
     parser.add_argument('--batch-size', default=16, help='number of batch')
     parser.add_argument('--out-dir', default='./result/wbc', help='folder to output data and model checkpoints')
     args = parser.parse_args()
